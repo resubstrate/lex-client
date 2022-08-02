@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom"
 
-const Annotator = () => {
+const Annotation = () => {
     return (
         <section>
-            <h1>Annotators Page</h1>
+            <h1>Annotation Editor</h1>
             <br />
-            <p>Your annotations can be found here</p>
-            <Link to="/annotation">Create New Annotation</Link>
+            <p>You can create a new annotation here</p>
             <div className="flexGrow">
                 <Link to="/">Home</Link>
             </div>
@@ -14,4 +13,4 @@ const Annotator = () => {
     )
 }
 
-export default Annotator
+export default Annotation

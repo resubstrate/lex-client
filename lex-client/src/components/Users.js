@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import { useNavigate, useLocation } from "react-router-dom";
+import useRefreshToken from "../hooks/useRefreshToken";
 
 const Users = () => {
     const [users, setUsers] = useState();
     const axiosPrivate = useAxiosPrivate();
     const navigate = useNavigate();
     const location = useLocation();
+    const refresh = useRefreshToken();
 
     useEffect(() => {
         let isMounted = true;
@@ -43,6 +45,8 @@ const Users = () => {
                     </ul>
                 ) : <p>No users to display</p>
             }
+            <button onClick={() => refresh()}>Refresh</button>
+            <br></br>
         </article>
     );
 };

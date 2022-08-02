@@ -16,11 +16,11 @@ const Home = () => {
             <br />
             <p>You are logged in!</p>
             <br />
-            <Link to="/annotator">Go to the Annotator page</Link>
+            <Link to="/annotator">Go to the Annotator home</Link>
             <br />
-            <Link to="/admin">Go to the Admin page</Link>
+            <Link to="/admin">Go to the Admin home</Link>
             <br />
-            <Link to="/research">Go to the Research page</Link>
+            <Link to="/research">Go to the Research home</Link>
             <br />
             <Link to="/linkpage">Go to the link page</Link>
             <div className="flexGrow">

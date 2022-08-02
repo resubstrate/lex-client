@@ -11,6 +11,8 @@ import Unauthorized from './components/Unauthorized';
 import Research from './components/Research';
 import LinkPage from './components/LinkPage';
 import RequireAuth from './components/RequireAuth';
+import PersistLogin from './components/PersistLogin';
+import Annotation from './components/Annotation';
 import { Routes, Route } from 'react-router-dom';
 
 const ROLES = {
@@ -30,21 +32,28 @@ function App() {
         <Route path="unauthorized" element={<Unauthorized />} />
 
         {/* we want to protect these routes */}
-        <Route element={<RequireAuth allowedRoles={[ROLES.Annotator, ROLES.Researcher, ROLES.Admin]} />}>
-          <Route path="/" element={<Home />} />
+        <Route element={<PersistLogin />}>
+          <Route element={<RequireAuth allowedRoles={[ROLES.Annotator, ROLES.Researcher, ROLES.Admin]} />}>
+            <Route path="/" element={<Home />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={[ROLES.Annotator]} />}>
+            <Route path="annotator" element={<Annotator />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={[ROLES.Annotator]} />}>
+            <Route path="annotation" element={<Annotation />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={[ROLES.Admin]} />}>
+            <Route path="admin" element={<Admin />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={[ROLES.Researcher, ROLES.Admin]} />}>
+            <Route path="research" element={<Research />} />
+          </Route>
         </Route>
 
-        <Route element={<RequireAuth allowedRoles={[ROLES.Annotator]} />}>
-          <Route path="annotator" element={<Annotator />} />
-        </Route>
-
-        <Route element={<RequireAuth allowedRoles={[ROLES.Admin]} />}>
-          <Route path="admin" element={<Admin />} />
-        </Route>
-
-        <Route element={<RequireAuth allowedRoles={[ROLES.Researcher, ROLES.Admin]} />}>
-          <Route path="research" element={<Research />} />
-        </Route>
         {/* catch all */}
         <Route path="*" element={<Missing />} />
       </Route>

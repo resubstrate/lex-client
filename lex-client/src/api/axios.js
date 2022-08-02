@@ -1,5 +1,6 @@
 import axios from 'axios';
 const BASE_URL = 'https://localhost:7141';
+const HOST_URL = 'https://lex-test.azurewebsites.net/';
 
 export default axios.create({
     baseURL: BASE_URL
