@@ -1,5 +1,5 @@
 import axios from 'axios';
-const BASE_URL = 'https://lex-test.azurewebsites.net/';
+const BASE_URL = 'https://lex-test.azurewebsites.net';
 
 export default axios.create({
     baseURL: BASE_URL
