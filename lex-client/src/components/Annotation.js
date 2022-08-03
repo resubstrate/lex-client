@@ -45,6 +45,10 @@ const SummaryInputView = (props) => {
     props.onChange(newValue)
   }
 
+  props.addClearState(() => {
+    setValue("")
+  })
+
   return (
     <div>
       <textarea spellCheck="true" style={{backgroundColor: c.input, color: c.lightText, fontSize: 14}} rows="10" cols="50" onChange={onChange} value={value}/>
@@ -60,6 +64,10 @@ const ListInputView = (props) => {
     setValue(newValue)
     props.onChange([...new Set(newValue.split(",").map(s => parseInt(s.replace(" ", ""))).filter(o => o))])
   }
+
+  props.addClearState(() => {
+    setValue("")
+  })
 
   return (
     <div>
@@ -87,6 +95,13 @@ const Annotation = () => {
     setOtherSentences(otherSentences)
   }
 
+  let clearStateFuncs = []
+  const clearState = () => {
+    for (const f of clearStateFuncs) {
+      f()
+    }
+  }
+
   const submit = (e) => {
     (async () => {
     console.log("submit")
@@ -112,6 +127,7 @@ const Annotation = () => {
       setSource(newSource)
       setUserSummaries(Array(source.segments.length).fill(""))
       setOtherSentences(Array(source.segments.length).fill([]))
+      clearState()
     })()
   }
 
@@ -134,12 +150,12 @@ const Annotation = () => {
               <div style={{flex: 6}}>
                 <div style={{color: c.darkText}}>{`Segment Summary ${index + 1}`}</div>
                 <br/>
-                <SummaryInputView  onChange={(v) => {editSummary(index, v)}}/>
+                <SummaryInputView addClearState={f => {clearStateFuncs.push(f)}} onChange={(v) => {editSummary(index, v)}}/>
                 <br/>
                 <br/>
                 <div style={{color: c.darkText}}>{`Other Sentences Used, Enter separated by a comma ',' no space.`}</div>
                 <br/>
-                <ListInputView onChange={(v) => {editOtherSentences(index, v)}}/>
+                <ListInputView addClearState={f => {clearStateFuncs.push(f)}} onChange={(v) => {editOtherSentences(index, v)}}/>
               </div>
             </div>
             <br/>
