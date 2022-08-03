@@ -135,7 +135,7 @@ const Annotation = () => {
                 <SummaryInputView onChange={(v) => {editSummary(index, v)}}/>
                 <br/>
                 <br/>
-                <div style={{color: c.darkText}}>{`Other Sentences Used`}</div>
+                <div style={{color: c.darkText}}>{`Other Sentences Used, Enter separated by a comma ',' no space.`}</div>
                 <br/>
                 <ListInputView onChange={(v) => {editOtherSentences(index, v)}}/>
               </div>
