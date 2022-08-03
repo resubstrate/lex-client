@@ -47,7 +47,7 @@ const SummaryInputView = (props) => {
 
   return (
     <div>
-      <textarea spellCheck="true" style={{backgroundColor: c.input, color: c.lightText, fontSize: 14}} rows="4" cols="50" onChange={onChange} value={value}/>
+      <textarea spellCheck="true" style={{backgroundColor: c.input, color: c.lightText, fontSize: 14}} rows="10" cols="50" onChange={onChange} value={value}/>
     </div>
   )
 }
@@ -73,7 +73,7 @@ const Annotation = () => {
 
   const [source, setSource] = useState(test)
   const [userSummaries, setUserSummaries] = useState(Array(source.segments.length).fill(""))
-  const [otherSentences, setOtherSentences] = useState(Array(source.segments.length).fill(""))
+  const [otherSentences, setOtherSentences] = useState(Array(source.segments.length).fill([]))
 
   const editSummary = (index, value) => {
     console.log("editSummary", index, value)
@@ -110,6 +110,8 @@ const Annotation = () => {
       }
       console.log("newSource", newSource)
       setSource(newSource)
+      setUserSummaries(Array(source.segments.length).fill(""))
+      setOtherSentences(Array(source.segments.length).fill([]))
     })()
   }
 
@@ -132,7 +134,7 @@ const Annotation = () => {
               <div style={{flex: 6}}>
                 <div style={{color: c.darkText}}>{`Segment Summary ${index + 1}`}</div>
                 <br/>
-                <SummaryInputView onChange={(v) => {editSummary(index, v)}}/>
+                <SummaryInputView  onChange={(v) => {editSummary(index, v)}}/>
                 <br/>
                 <br/>
                 <div style={{color: c.darkText}}>{`Other Sentences Used, Enter separated by a comma ',' no space.`}</div>
