@@ -99,7 +99,7 @@ const Annotation = () => {
     const sourceSegmentCount = source.segments.length
     const content = userSummaries.join(" ")
     const response = await axios.post("/v1/source/segmentWithCompression",
-      JSON.stringify({ content, sourceWordCount, sourceSegmentCount, idealCompression: 0.75 }),
+      JSON.stringify({ content, sourceWordCount, sourceSegmentCount, idealCompression: 0.65 }),
       {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: false
@@ -130,7 +130,7 @@ const Annotation = () => {
               </div>
               <div style={{flex: 0.5}}/>
               <div style={{flex: 6}}>
-                <div style={{color: c.darkText}}>{`Segment Summary`}</div>
+                <div style={{color: c.darkText}}>{`Segment Summary ${index + 1}`}</div>
                 <br/>
                 <SummaryInputView onChange={(v) => {editSummary(index, v)}}/>
                 <br/>
@@ -141,7 +141,7 @@ const Annotation = () => {
               </div>
             </div>
             <br/>
-            <div style={{height: 1, backgroundColor: c.background, width: "100%"}}/>
+            <div style={{height: 2, backgroundColor: c.background, width: "100%"}}/>
             <br/>
           </div>
         )
