@@ -142,7 +142,9 @@ const Annotation = () => {
                 <div style={{color: c.darkText}}>{`Segment ${index + 1}`}</div>
                 <br/>
                 <div key={index}>{segment.sentences.map(s => {
-                  const style = {color: s.speaker_id == 1 ? c.pinkText : c.greenText}
+                  let style
+                  if (s.speaker_id == 1) style = {color: c.pinkText}
+                  else if (s.speaker_id == 2) style = {color: c.greenText}
                   return <span style={style}><sup>{`${s.ordinal + 1}`}</sup>{s.text}</span>
                 })}</div>
               </div>
