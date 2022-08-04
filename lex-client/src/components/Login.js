@@ -27,39 +27,46 @@ const Login = () => {
         setErrMsg('');
     }, [user, pwd])
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        try {
-            const response = await axios.post(LOGIN_URL,
-                JSON.stringify({ userName: user, password: pwd }),
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    withCredentials: true
-                }
-            );
-            console.log(JSON.stringify(response?.data));
-            //console.log(JSON.stringify(response));
-            const accessToken = response?.data?.accessToken;
-            const roles = response?.data?.roles;
-            setAuth({ user, pwd, roles, accessToken });
-            localStorage.setItem("lex-auth", JSON.stringify({user, pwd}))
-            setUser('');
-            setPwd('');
-            navigate(from, { replace: true });
-        } catch (err) {
-            if (!err?.response) {
-                setErrMsg('No Server Response');
-            } else if (err.response?.status === 400) {
-                setErrMsg('Missing Username or Password');
-            } else if (err.response?.status === 401) {
-                setErrMsg('Unauthorized');
-            } else {
-                setErrMsg('Login Failed');
-            }
-            errRef.current.focus();
-        }
+  const handleSubmit = async (e, auth) => {
+    e.preventDefault();
+    let user2 = user
+    let pwd2 = pwd
+    if (auth) {
+      user2 = auth.user
+      pwd2 = auth.pwd
     }
+    if (!user2 || !pwd2) return
+
+    try {
+      const response = await axios.post(LOGIN_URL,
+        JSON.stringify({ userName: user2, password: pwd2 }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true
+        }
+      );
+      console.log(JSON.stringify(response?.data));
+      //console.log(JSON.stringify(response));
+      const accessToken = response?.data?.accessToken;
+      const roles = response?.data?.roles;
+      setAuth({ user: user2, pwd: pwd2, roles, accessToken });
+      localStorage.setItem("lex-auth", JSON.stringify({user: user2, pwd: pwd2}))
+      setUser('');
+      setPwd('');
+      navigate(from, { replace: true });
+    } catch (err) {
+      if (!err?.response) {
+        setErrMsg('No Server Response');
+      } else if (err.response?.status === 400) {
+        setErrMsg('Missing Username or Password');
+      } else if (err.response?.status === 401) {
+        setErrMsg('Unauthorized');
+      } else {
+        setErrMsg('Login Failed');
+      }
+      errRef.current.focus();
+    }
+  }
 
     useEffect(() => {
       let auth = localStorage.getItem("lex-auth")
@@ -67,8 +74,8 @@ const Login = () => {
       auth = JSON.parse(auth)
       setUser(auth.user)
       setPwd(auth.pwd)
-      handleSubmit({preventDefault: (() => {})})
-    })
+      handleSubmit({preventDefault: (() => {})}, auth)
+    }, [])
 
     return (
         <section>

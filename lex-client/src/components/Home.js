@@ -6,6 +6,7 @@ const Home = () => {
     const logout = useLogout();
 
     const signOut = async () => {
+        localStorage.removeItem("lex-auth")
         await logout();
         navigate('/linkpage');
     }
