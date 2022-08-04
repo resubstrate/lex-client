@@ -43,6 +43,7 @@ const Login = () => {
             const accessToken = response?.data?.accessToken;
             const roles = response?.data?.roles;
             setAuth({ user, pwd, roles, accessToken });
+            localStorage.setItem("lex-auth", JSON.stringify({user, pwd}))
             setUser('');
             setPwd('');
             navigate(from, { replace: true });
@@ -59,6 +60,15 @@ const Login = () => {
             errRef.current.focus();
         }
     }
+
+    useEffect(() => {
+      let auth = localStorage.getItem("lex-auth")
+      if (!auth) return
+      auth = JSON.parse(auth)
+      setUser(auth.user)
+      setPwd(auth.pwd)
+      handleSubmit({preventDefault: (() => {})})
+    })
 
     return (
         <section>
