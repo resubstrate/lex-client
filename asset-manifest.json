@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/site/static/css/main.528dddfd.css",
-    "main.js": "/site/static/js/main.9dece611.js",
-    "static/js/787.ec63355a.chunk.js": "/site/static/js/787.ec63355a.chunk.js",
-    "static/media/logo.svg": "/site/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
-    "index.html": "/site/index.html",
-    "main.528dddfd.css.map": "/site/static/css/main.528dddfd.css.map",
-    "main.9dece611.js.map": "/site/static/js/main.9dece611.js.map",
-    "787.ec63355a.chunk.js.map": "/site/static/js/787.ec63355a.chunk.js.map"
+    "main.css": "/lex-client/static/css/main.528dddfd.css",
+    "main.js": "/lex-client/static/js/main.a34e5265.js",
+    "static/js/787.ec63355a.chunk.js": "/lex-client/static/js/787.ec63355a.chunk.js",
+    "static/media/logo.svg": "/lex-client/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
+    "index.html": "/lex-client/index.html",
+    "main.528dddfd.css.map": "/lex-client/static/css/main.528dddfd.css.map",
+    "main.a34e5265.js.map": "/lex-client/static/js/main.a34e5265.js.map",
+    "787.ec63355a.chunk.js.map": "/lex-client/static/js/787.ec63355a.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.528dddfd.css",
-    "static/js/main.9dece611.js"
+    "static/js/main.a34e5265.js"
   ]
 }
