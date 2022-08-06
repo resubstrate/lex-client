@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom"
 import React, { useEffect, useState, useRef } from "react";
 import axios from '../api/axios';
-const test = require("../test.json")
 
 const c = {
   foreground: "#2E2E2E",
@@ -91,7 +90,7 @@ const Annotation = () => {
           headers: { 'Content-Type': 'application/json' },
           withCredentials: false
         })
-      setOtherSentences(response.data)
+      setSources(response.data)
     })();
   }, [])
 
@@ -156,7 +155,7 @@ const Annotation = () => {
   return (
     <div style={{backgroundColor: c.background, width: "100%"}}>
     <select name="sources" id="sources" onChange={e => selectSource(e.target.value)}>
-      {otherSentences.map(({item1, item2}) => {
+      {sources.map(({item1, item2}) => {
         return (<option key={item1} value={item1}>{item2}</option>)
       })}
     </select>
