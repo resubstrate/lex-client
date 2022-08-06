@@ -79,9 +79,21 @@ const ListInputView = (props) => {
 const Annotation = () => {
   const {w, h} = useWindowDimensions()
 
-  const [source, setSource] = useState(test)
+  const [source, setSource] = useState({segments: []})
+  const [sources, setSources] = useState([])
   const [userSummaries, setUserSummaries] = useState(Array(source.segments.length).fill(""))
   const [otherSentences, setOtherSentences] = useState(Array(source.segments.length).fill([]))
+
+  useState(() => {
+    ;(async () => {
+      const response = await axios.get("/v1/sources/original",
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: false
+        })
+      setOtherSentences(response.data)
+    })();
+  }, [])
 
   const editSummary = (index, value) => {
     console.log("editSummary", index, value)
@@ -113,7 +125,7 @@ const Annotation = () => {
     }
     const sourceSegmentCount = source.segments.length
     const content = userSummaries.join(" ")
-    const response = await axios.post("/v1/source/segmentWithCompression",
+    const response = await axios.post("/v1/segmentWithCompression",
       JSON.stringify({ content, sourceWordCount, sourceSegmentCount, idealCompression: 0.65 }),
       {
         headers: { 'Content-Type': 'application/json' },
@@ -131,8 +143,23 @@ const Annotation = () => {
     })()
   }
 
+  const selectSource = async(value) => {
+    console.log("selectSource", value)
+    const response = await axios.get("/v1/source/original/" + value,
+      {
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: false
+      })
+    setSource(response.data)
+  };
+
   return (
     <div style={{backgroundColor: c.background, width: "100%"}}>
+    <select name="sources" id="sources" onChange={e => selectSource(e.target.value)}>
+      {otherSentences.map(({item1, item2}) => {
+        return (<option key={item1} value={item1}>{item2}</option>)
+      })}
+    </select>
     <div style={{backgroundColor: c.foreground, margin: "3%", padding: "3%", borderRadius: 5, width: "94%"}}>
        {source.segments.map((segment, index) => {
         return (
