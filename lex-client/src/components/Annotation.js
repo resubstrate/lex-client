@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
-import React, { useEffect, useState, useRef } from "react";
-import axios from '../api/axios';
+import React, { useEffect, useContext, useState, useRef } from "react";
+import useAxiosPrivate from '../hooks/useAxiosPrivate';
+import AuthContext from "../context/AuthProvider";
 
 const c = {
   foreground: "#2E2E2E",
@@ -76,12 +77,31 @@ const ListInputView = (props) => {
 }
 
 const Annotation = () => {
+  const axios = useAxiosPrivate()
+
   const {w, h} = useWindowDimensions()
 
+  const [annotation, setAnnotation] = useState(undefined)
   const [source, setSource] = useState({segments: []})
   const [sources, setSources] = useState([])
   const [userSummaries, setUserSummaries] = useState(Array(source.segments.length).fill(""))
   const [otherSentences, setOtherSentences] = useState(Array(source.segments.length).fill([]))
+  const { auth } = useContext(AuthContext);
+
+  const initAnnotation = async() => {
+    if (!source.id || annotation || auth.user) return
+    const annotatorId = auth.user
+    const sourceId = source.id
+    const response = await axios.post("/v1/annotation",
+      JSON.stringify({ annotatorId, sourceId }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: false
+      })
+    const a =  {id: response.data.annotationId, index: response.data.annotationIndexId}
+    console.log("setAnnotation", a)
+    setAnnotation(a)
+  }
 
   useState(() => {
     ;(async () => {
@@ -91,6 +111,9 @@ const Annotation = () => {
           withCredentials: false
         })
       setSources(response.data)
+      if (response.data) {
+        selectSource(response.data[0].item1)
+      }
     })();
   }, [])
 
@@ -98,6 +121,7 @@ const Annotation = () => {
     console.log("editSummary", index, value)
     userSummaries[index] = value
     setUserSummaries(userSummaries)
+    initAnnotation()
   }
 
   const editOtherSentences = (index, value) => {
@@ -167,11 +191,11 @@ const Annotation = () => {
               <div style={{flex: 5, textAlign: "justify"}}>
                 <div style={{color: c.darkText}}>{`Segment ${index + 1}`}</div>
                 <br/>
-                <div key={index}>{segment.sentences.map(s => {
+                <div key={index}>{segment.sentences.map((s, si) => {
                   let style
                   if (s.speaker_id == 1) style = {color: c.pinkText}
                   else if (s.speaker_id == 2) style = {color: c.greenText}
-                  return <span style={style}><sup>{`${s.ordinal + 1}`}</sup>{s.text}</span>
+                  return <span key={si} style={style}><sup>{`${s.ordinal + 1}`}</sup>{s.text}</span>
                 })}</div>
               </div>
               <div style={{flex: 0.5}}/>
