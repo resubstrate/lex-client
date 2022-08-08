@@ -86,6 +86,7 @@ const Annotation = () => {
   const [sources, setSources] = useState([])
   const [userSummaries, setUserSummaries] = useState(Array(source.segments.length).fill(""))
   const [otherSentences, setOtherSentences] = useState(Array(source.segments.length).fill([]))
+  const [pendingSave, setPendingSave] = useState(false)
   const { auth } = useContext(AuthContext);
 
   const initAnnotation = async() => {
@@ -94,6 +95,56 @@ const Annotation = () => {
     const sourceId = source.id
     const response = await axios.post("/v1/annotation",
       JSON.stringify({ annotatorId, sourceId }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: false
+      })
+    const a =  {id: response.data.annotationId}
+    console.log("setAnnotation", a)
+    setAnnotation(a)
+  }
+
+  const getAnnotation = async() => {
+    if (auth.user || !source) return
+    const response = (await axios.get(`/v1/annotations/annotator/${auth.user}`,
+      {
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true
+      })).data
+    let entries = response.filter(o => o.originalSourceId == source.id && entry.annotations)
+    if (!entries) return
+    // sort by updateTime desc
+    entries.sort((a, b) => (new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()))
+    let entry = entries[0]
+    // sort by depth desc
+    entries.annotations.sort((a, b) => b.depth - a.depth)
+    let newAnnotation = entry.annotations[0]
+    setAnnotation(newAnnotation)
+    setSource({segments: newAnnotation.annotationSource.segments})
+  }
+
+  useEffect(() => {
+    getAnnotation()
+  }, [source])
+
+  const editAnnotation = async() => {
+    if (!source.id || !annotation || auth.user) return
+    const segments = userSummaries.map((s, idx) => {
+      return {
+        segmentText: s,
+        sourceSentences: otherSentences[idx],
+        sourceSegmentId: idx,
+        id: idx,
+      }
+    })
+    const response = await axios.post("/v1/segment",
+      JSON.stringify({
+        annotatorId: auth.user,
+        annotationId: annotation.id,
+        annotationSourceId: source.id,
+        idealCompression: 0.65,
+        depth: annotation.depth || 0,
+      }),
       {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: false
@@ -117,11 +168,17 @@ const Annotation = () => {
     })();
   }, [])
 
-  const editSummary = (index, value) => {
+  const editSummary = async (index, value) => {
     console.log("editSummary", index, value)
     userSummaries[index] = value
     setUserSummaries(userSummaries)
-    initAnnotation()
+    await initAnnotation()
+    setPendingSave(true)
+    setTimeout(async () => {
+      if (pendingSave) { return }
+
+      setPendingSave(false)
+    }, 1000)
   }
 
   const editOtherSentences = (index, value) => {
@@ -149,7 +206,12 @@ const Annotation = () => {
     const sourceSegmentCount = source.segments.length
     const content = userSummaries.join(" ")
     const response = await axios.post("/v1/segmentWithCompression",
-      JSON.stringify({ content, sourceWordCount, sourceSegmentCount, idealCompression: 0.65 }),
+      JSON.stringify({
+        content,
+        sourceWordCount,
+        sourceSegmentCount,
+        idealCompression: 0.65,
+      }),
       {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: false
