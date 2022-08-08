@@ -99,26 +99,31 @@ const Annotation = () => {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: false
       })
+    console.log("initAnnotation response", response.data)
     const a =  {id: response.data.annotationId}
-    console.log("setAnnotation", a)
     setAnnotation(a)
   }
 
   const getAnnotation = async() => {
-    if (auth.user || !source) return
+    console.log("getAnnotation", {authUser: auth.user, source})
+    if (!auth.user || !source) return
     const response = (await axios.get(`/v1/annotations/annotator/${auth.user}`,
       {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true
       })).data
+    console.log("getAnnotations response", response)
     let entries = response.filter(o => o.originalSourceId == source.id && entry.annotations)
-    if (!entries) return
+    console.log("getAnnotations entries", entries)
+    if (entries.length < 1) return
     // sort by updateTime desc
     entries.sort((a, b) => (new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()))
     let entry = entries[0]
+    console.log("getAnnotations chosen entry", entry)
     // sort by depth desc
-    entries.annotations.sort((a, b) => b.depth - a.depth)
+    entry.annotations.sort((a, b) => b.depth - a.depth)
     let newAnnotation = entry.annotations[0]
+    console.log("getAnnotations newAnnotation", newAnnotation)
     setAnnotation(newAnnotation)
     setSource({segments: newAnnotation.annotationSource.segments})
   }
@@ -128,6 +133,7 @@ const Annotation = () => {
   }, [source])
 
   const editAnnotation = async() => {
+    console.log("editAnnotation", {sourceId: source.id, annotation, authUser: auth.user})
     if (!source.id || !annotation || auth.user) return
     const segments = userSummaries.map((s, idx) => {
       return {
@@ -149,7 +155,7 @@ const Annotation = () => {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: false
       })
-    const a =  {id: response.data.annotationId, index: response.data.annotationIndexId}
+    const a = response.data
     console.log("setAnnotation", a)
     setAnnotation(a)
   }
@@ -173,10 +179,14 @@ const Annotation = () => {
     userSummaries[index] = value
     setUserSummaries(userSummaries)
     await initAnnotation()
-    setPendingSave(true)
+    if (!annotation) {
+      await getAnnotation()
+    }
     setTimeout(async () => {
+      console.log({pendingSave})
       if (pendingSave) { return }
-
+      setPendingSave(true)
+      await editAnnotation()
       setPendingSave(false)
     }, 1000)
   }
