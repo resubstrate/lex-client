@@ -86,11 +86,11 @@ const Annotation = () => {
   const [sources, setSources] = useState([])
   const [userSummaries, setUserSummaries] = useState(Array(source.segments.length).fill(""))
   const [otherSentences, setOtherSentences] = useState(Array(source.segments.length).fill([]))
-  const [pendingSave, setPendingSave] = useState(false)
   const { auth } = useContext(AuthContext);
 
   const initAnnotation = async() => {
-    if (!source.id || annotation || auth.user) return
+    console.log("initAnnotation", {authUser: auth.user, source, annotation})
+    if (!source.id || annotation || !auth.user) return
     const annotatorId = auth.user
     const sourceId = source.id
     const response = await axios.post("/v1/annotation",
@@ -104,16 +104,19 @@ const Annotation = () => {
     setAnnotation(a)
   }
 
-  const getAnnotation = async() => {
-    console.log("getAnnotation", {authUser: auth.user, source})
-    if (!auth.user || !source) return
+  const getAnnotation = async(source2) => {
+    if (!source2) {
+      source2 = source
+    }
+    console.log("getAnnotation", {authUser: auth.user, source: source2})
+    if (!auth.user || !source2) return
     const response = (await axios.get(`/v1/annotations/annotator/${auth.user}`,
       {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true
       })).data
     console.log("getAnnotations response", response)
-    let entries = response.filter(o => o.originalSourceId == source.id && entry.annotations)
+    let entries = response.filter(o => o.originalSourceId == source2.id && o.annotations)
     console.log("getAnnotations entries", entries)
     if (entries.length < 1) return
     // sort by updateTime desc
@@ -125,38 +128,37 @@ const Annotation = () => {
     let newAnnotation = entry.annotations[0]
     console.log("getAnnotations newAnnotation", newAnnotation)
     setAnnotation(newAnnotation)
-    setSource({segments: newAnnotation.annotationSource.segments})
+    setSource(newAnnotation.annotationSource)
   }
 
-  useEffect(() => {
-    getAnnotation()
-  }, [source])
-
-  const editAnnotation = async() => {
-    console.log("editAnnotation", {sourceId: source.id, annotation, authUser: auth.user})
-    if (!source.id || !annotation || auth.user) return
+  const setSegment = async() => {
+    console.log("setSegment", {source: source, annotation, authUser: auth.user})
+    if (!source.id || !annotation || !auth.user) return
     const segments = userSummaries.map((s, idx) => {
       return {
         segmentText: s,
         sourceSentences: otherSentences[idx],
-        sourceSegmentId: idx,
-        id: idx,
+        sourceSegmentId: idx + 1,
+        id: idx + 1,
       }
     })
-    const response = await axios.post("/v1/segment",
-      JSON.stringify({
+    const req = {
         annotatorId: auth.user,
-        annotationId: annotation.id,
-        annotationSourceId: source.id,
+        annotationId: annotation.annotationSource.annotationId,
+        annotationSourceId: source.id, //annotation.annotationSource.id,
         idealCompression: 0.65,
         depth: annotation.depth || 0,
-      }),
+        segments,
+      }
+    console.log("v1/segment req", req)
+    const response = await axios.post("/v1/segment",
+      JSON.stringify(req),
       {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: false
       })
     const a = response.data
-    console.log("setAnnotation", a)
+    console.log("setSegment setAnnotation", a)
     setAnnotation(a)
   }
 
@@ -167,6 +169,7 @@ const Annotation = () => {
           headers: { 'Content-Type': 'application/json' },
           withCredentials: false
         })
+      console.log("sources", response.data)
       setSources(response.data)
       if (response.data) {
         selectSource(response.data[0].item1)
@@ -178,17 +181,6 @@ const Annotation = () => {
     console.log("editSummary", index, value)
     userSummaries[index] = value
     setUserSummaries(userSummaries)
-    await initAnnotation()
-    if (!annotation) {
-      await getAnnotation()
-    }
-    setTimeout(async () => {
-      console.log({pendingSave})
-      if (pendingSave) { return }
-      setPendingSave(true)
-      await editAnnotation()
-      setPendingSave(false)
-    }, 1000)
   }
 
   const editOtherSentences = (index, value) => {
@@ -204,9 +196,12 @@ const Annotation = () => {
     }
   }
 
-  const submit = (e) => {
-    (async () => {
-    console.log("submit")
+  const submit = async (e) => {
+    await getAnnotation()
+    await initAnnotation()
+    return await setSegment()
+
+    // TODO old stuff below
     let sourceWordCount = 0
     for (const segment of source.segments) {
       for (const sentence of segment.sentences) {
@@ -226,26 +221,28 @@ const Annotation = () => {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: false
       })
-      let newSource = {segments: response?.data}
-      if (sourceSegmentCount == 1) {
-        newSource = {segments: []}
-      }
-      console.log("newSource", newSource)
-      setSource(newSource)
-      setUserSummaries(Array(source.segments.length).fill(""))
-      setOtherSentences(Array(source.segments.length).fill([]))
-      clearState()
-    })()
+    let newSource = {segments: response?.data}
+    if (sourceSegmentCount == 1) {
+      newSource = {segments: []}
+    }
+    console.log("newSource", newSource)
+    setSource(newSource)
+    setUserSummaries(Array(source.segments.length).fill(""))
+    setOtherSentences(Array(source.segments.length).fill([]))
+    clearState()
   }
 
   const selectSource = async(value) => {
-    console.log("selectSource", value)
     const response = await axios.get("/v1/source/original/" + value,
       {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: false
       })
+    console.log("selectSource", response.data)
     setSource(response.data)
+    setAnnotation(undefined)
+    await getAnnotation(response.data)
+    clearState()
   };
 
   return (
