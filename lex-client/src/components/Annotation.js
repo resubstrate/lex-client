@@ -168,7 +168,7 @@ const Annotation = () => {
       segments: getLastA9().annotationSummary.segments,
       annotatorId,
       annotationId: annotation.id,
-      annotationSourceId: annotation.originalSourceId,
+      annotationSourceId: annotation.id,
       sourceSegmentCount: getLastA9().annotationSummary.segments.length,
       idealCompression: 0.65,
       depth: getLastA9().depth + 1,
@@ -197,6 +197,15 @@ const Annotation = () => {
       </div>
     )
   }
+  if (getLastA9().annotationSource.segments.length <= 1) {
+    return (
+      <div style={{backgroundColor: c.background, width: "100%"}}>
+        <div style={{backgroundColor: c.foreground, margin: "3%", padding: "3%", borderRadius: 5, width: "94%"}}>
+          This annotation is complete.
+        </div>
+      </div>
+    )
+  }
   return (
     <div style={{backgroundColor: c.background, width: "100%"}}>
     <div style={{backgroundColor: c.foreground, margin: "3%", padding: "3%", borderRadius: 5, width: "94%"}}>
@@ -221,7 +230,7 @@ const Annotation = () => {
                 <SummaryInputView addClearState={f => {clearStateFuncs.push(f)}} onChange={(v) => {editSummary(index, v)}}/>
                 <br/>
                 <br/>
-                <div style={{color: c.darkText}}>{`Other Sentences Used, Enter separated by a comma ',' no space.`}</div>
+                <div style={{color: c.darkText}}>{`Other Sentences Used, Enter separated by a comma ','`}</div>
                 <br/>
                 <ListInputView addClearState={f => {clearStateFuncs.push(f)}} onChange={(v) => {editOtherSentences(index, v)}}/>
               </div>
