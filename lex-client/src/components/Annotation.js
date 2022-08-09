@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useContext, useState, useRef } from "react";
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import AuthContext from "../context/AuthProvider";
@@ -78,60 +78,84 @@ const ListInputView = (props) => {
 
 const Annotation = () => {
   const axios = useAxiosPrivate()
+  const { auth } = useContext(AuthContext);
+  const annotatorId = auth.user
 
   const {w, h} = useWindowDimensions()
 
   const [annotation, setAnnotation] = useState(undefined)
-  const [source, setSource] = useState({segments: []})
-  const [sources, setSources] = useState([])
-  const [userSummaries, setUserSummaries] = useState(Array(source.segments.length).fill(""))
-  const [otherSentences, setOtherSentences] = useState(Array(source.segments.length).fill([]))
-  const { auth } = useContext(AuthContext);
 
-  const initAnnotation = async() => {
-    if (!source.id || annotation || auth.user) return
-    const annotatorId = auth.user
-    const sourceId = source.id
-    const response = await axios.post("/v1/annotation",
-      JSON.stringify({ annotatorId, sourceId }),
+  const location = useLocation();
+
+  const getAnnotation = async() => {
+    const a9id = location.search.split("?id=")[1]
+    console.log({a9id})
+    if (a9id == "") return
+    const response = await axios.get("/v1/annotation/" + a9id,
       {
         headers: { 'Content-Type': 'application/json' },
-        withCredentials: false
+        withCredentials: true
       })
-    const a =  {id: response.data.annotationId, index: response.data.annotationIndexId}
-    console.log("setAnnotation", a)
-    setAnnotation(a)
+    console.log("got annotation", response.data)
+    for (let a9 of response.data.annotations) {
+      if (!a9.annotationSummary) {
+        a9.annotationSummary = {
+          // TODO add other fields
+          segments: [],
+        }
+        for (let idx = 0; idx < a9.annotationSource.segments.length; idx++) {
+          a9.annotationSummary.segments.push({
+            id: idx + 1,
+            sourceSegmentId: idx + 1,
+            segmentText: "",
+            sentences: [],
+            sourceSentences: [],
+          })
+        }
+      }
+    }
+    setAnnotation(response.data)
   }
 
-  useState(() => {
-    ;(async () => {
-      const response = await axios.get("/v1/sources/original",
-        {
-          headers: { 'Content-Type': 'application/json' },
-          withCredentials: false
-        })
-      setSources(response.data)
-      if (response.data) {
-        selectSource(response.data[0].item1)
-      }
-    })();
+  useEffect(() => {
+    getAnnotation()
   }, [])
 
+  const getLastA9 = (edit) => {
+    return (edit || annotation)
+      .annotations[annotation.annotations.length - 1]
+  }
+
   const editSummary = (index, value) => {
+    if (!annotation) return
     console.log("editSummary", index, value)
-    userSummaries[index] = value
-    setUserSummaries(userSummaries)
-    initAnnotation()
+    const newA9 = annotation
+    getLastA9(newA9).annotationSummary.segments[index].segmentText = value
+    getLastA9(newA9).annotationSummary.segments[index].sourceSentences = getLastA9(newA9).annotationSummary.segments[index].sourceSentences || []
+    getLastA9(newA9).annotationSummary.segments[index].sentences
+      = value.split(/[\\.!\?]/).filter(s => s != "").map((sentence, si) => {
+        return {
+          ordinal: si,
+          text: sentence.trim(),
+          speaker: 0,
+        }
+      });
+    setAnnotation(newA9)
+    console.log("editSummary", getLastA9(newA9).annotationSummary.segments[index])
   }
 
   const editOtherSentences = (index, value) => {
+    if (!annotation) return
     console.log("editOtherSentences", index, value)
-    otherSentences[index] = value
-    setOtherSentences(otherSentences)
+    getLastA9().annotationSummary
+      .segments[index]
+      .sourceSentences = value
+    setAnnotation(annotation)
   }
 
   let clearStateFuncs = []
   const clearState = () => {
+    return  // TODO remove
     for (const f of clearStateFuncs) {
       f()
     }
@@ -139,52 +163,44 @@ const Annotation = () => {
 
   const submit = (e) => {
     (async () => {
-    console.log("submit")
-    let sourceWordCount = 0
-    for (const segment of source.segments) {
-      for (const sentence of segment.sentences) {
-        sourceWordCount += sentence.text.split(" ").length
-      }
+    if (!annotation) return
+    const req = {
+      segments: getLastA9().annotationSummary.segments,
+      annotatorId,
+      annotationId: annotation.id,
+      annotationSourceId: annotation.originalSourceId,
+      sourceSegmentCount: getLastA9().annotationSummary.segments.length,
+      idealCompression: 0.65,
+      depth: getLastA9().depth + 1,
     }
-    const sourceSegmentCount = source.segments.length
-    const content = userSummaries.join(" ")
-    const response = await axios.post("/v1/segmentWithCompression",
-      JSON.stringify({ content, sourceWordCount, sourceSegmentCount, idealCompression: 0.65 }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-        withCredentials: false
-      })
-      let newSource = {segments: response?.data}
-      if (sourceSegmentCount == 1) {
-        newSource = {segments: []}
-      }
-      console.log("newSource", newSource)
-      setSource(newSource)
-      setUserSummaries(Array(source.segments.length).fill(""))
-      setOtherSentences(Array(source.segments.length).fill([]))
-      clearState()
+    try {
+      const response = await axios.post("/v1/segment",
+        JSON.stringify(req),
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: false
+        })
+      await getAnnotation()
+    } catch(err) {
+      alert("Something went wrong. Please try again later.")
+    }
+      // TODO TODO
     })()
   }
 
-  const selectSource = async(value) => {
-    console.log("selectSource", value)
-    const response = await axios.get("/v1/source/original/" + value,
-      {
-        headers: { 'Content-Type': 'application/json' },
-        withCredentials: false
-      })
-    setSource(response.data)
-  };
-
+  if (!annotation) {
+    return (
+      <div style={{backgroundColor: c.background, width: "100%"}}>
+        <div style={{backgroundColor: c.foreground, margin: "3%", padding: "3%", borderRadius: 5, width: "94%"}}>
+          Loading...
+        </div>
+      </div>
+    )
+  }
   return (
     <div style={{backgroundColor: c.background, width: "100%"}}>
-    <select name="sources" id="sources" onChange={e => selectSource(e.target.value)}>
-      {sources.map(({item1, item2}) => {
-        return (<option key={item1} value={item1}>{item2}</option>)
-      })}
-    </select>
     <div style={{backgroundColor: c.foreground, margin: "3%", padding: "3%", borderRadius: 5, width: "94%"}}>
-       {source.segments.map((segment, index) => {
+       {getLastA9().annotationSource.segments.map((segment, index) => {
         return (
           <div style={{fontSize: 16}}>
             <div style={{display: "flex"}}>
@@ -216,7 +232,7 @@ const Annotation = () => {
           </div>
         )
        })}
-       {source.segments.length > 0 ? (<button onClick={submit}>Submit</button>) : (<div>All done!</div>)}
+       {getLastA9().annotationSource.segments.length > 0 ? (<button onClick={submit}>Submit</button>) : (<div>All done!</div>)}
     </div>
     </div>
   )
