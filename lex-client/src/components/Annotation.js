@@ -37,7 +37,8 @@ function useWindowDimensions() {
 }
 
 const SummaryInputView = (props) => {
-  const [value, setValue] = useState("")
+  console.log("props.value", props.value)
+  const [value, setValue] = useState(props.value || "")
 
   const onChange = (e) => {
     const newValue = e.target.value.replace(/\n/g, '').replace("  ", " ")
@@ -85,12 +86,29 @@ const Annotation = () => {
 
   const [annotation, setAnnotation] = useState(undefined)
 
+    const navigate = useNavigate();
   const location = useLocation();
 
   const getAnnotation = async() => {
-    const a9id = location.search.split("?id=")[1]
-    console.log({a9id})
-    if (a9id == "") return
+    //    const a9id = location.search.split("?id=")[1]
+    // the proper way doesn't work, so screw it
+    let a9id = (`${window.location}`).split("?id=")[1]
+    if (a9id == "undefined") a9id = undefined
+
+    if (!a9id) {
+      a9id = localStorage.getItem("a9id")
+      if (a9id == "undefined") a9id = undefined
+      console.log("got last annotation", a9id)
+    } else {
+      console.log("set last annotation", a9id)
+      localStorage.setItem("a9id", a9id)
+    }
+    if (!a9id) {
+      console.log("no annotation found")
+      localStorage.removeItem("a9id")
+      navigate("/")
+      return
+    }
     const response = await axios.get("/v1/annotation/" + a9id,
       {
         headers: { 'Content-Type': 'application/json' },
@@ -114,7 +132,14 @@ const Annotation = () => {
         }
       }
     }
-    setAnnotation(response.data)
+    let newA9 = response.data
+    // let oldA9 = localStorage.getItem("a9-" + newA9.id)
+    // if (oldA9 && oldA9 != "undefined") {
+    //   oldA9 = JSON.parse(oldA9)
+    //   console.log("got local a9 for " + newA9.id, oldA9)
+    //   newA9 = oldA9
+    // }
+    setAnnotation(newA9)
   }
 
   useEffect(() => {
@@ -140,6 +165,8 @@ const Annotation = () => {
           speaker: 0,
         }
       });
+    //console.log("stored local a9 for " + newA9.id)
+    //    localStorage.setItem("a9-" + newA9.id, JSON.stringify(newA9))
     setAnnotation(newA9)
     console.log("editSummary", getLastA9(newA9).annotationSummary.segments[index])
   }
@@ -155,7 +182,6 @@ const Annotation = () => {
 
   let clearStateFuncs = []
   const clearState = () => {
-    return  // TODO remove
     for (const f of clearStateFuncs) {
       f()
     }
@@ -227,7 +253,7 @@ const Annotation = () => {
               <div style={{flex: 6}}>
                 <div style={{color: c.darkText}}>{`Segment Summary ${index + 1}`}</div>
                 <br/>
-                <SummaryInputView addClearState={f => {clearStateFuncs.push(f)}} onChange={(v) => {editSummary(index, v)}}/>
+                <SummaryInputView value={getLastA9().annotationSummary.segments[index].segmentText} addClearState={f => {clearStateFuncs.push(f)}} onChange={(v) => {editSummary(index, v)}}/>
                 <br/>
                 <br/>
                 <div style={{color: c.darkText}}>{`Other Sentences Used, Enter separated by a comma ','`}</div>
