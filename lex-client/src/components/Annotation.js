@@ -185,11 +185,12 @@ const Annotation = () => {
           headers: { 'Content-Type': 'application/json' },
           withCredentials: false
         })
+      localStorage.removeItem("a9-" + annotation.id)
       await getAnnotation()
     } catch(err) {
+      console.error(err)
       alert("Something went wrong. Please try again later.")
     }
-      // TODO TODO
     })()
   }
 
