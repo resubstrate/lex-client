@@ -36,27 +36,6 @@ function useWindowDimensions() {
   return windowDimensions;
 }
 
-const SummaryInputView = (props) => {
-  console.log("props.value", props.value)
-  const [value, setValue] = useState(props.value || "")
-
-  const onChange = (e) => {
-    const newValue = e.target.value.replace(/\n/g, '').replace("  ", " ")
-    setValue(newValue)
-    props.onChange(newValue)
-  }
-
-  props.addClearState(() => {
-    setValue("")
-  })
-
-  return (
-    <div>
-      <textarea spellCheck="true" style={{backgroundColor: c.input, color: c.lightText, fontSize: 14}} rows="10" cols="50" onChange={onChange} value={value}/>
-    </div>
-  )
-}
-
 const ListInputView = (props) => {
   const [value, setValue] = useState("")
 
@@ -133,12 +112,12 @@ const Annotation = () => {
       }
     }
     let newA9 = response.data
-    // let oldA9 = localStorage.getItem("a9-" + newA9.id)
-    // if (oldA9 && oldA9 != "undefined") {
-    //   oldA9 = JSON.parse(oldA9)
-    //   console.log("got local a9 for " + newA9.id, oldA9)
-    //   newA9 = oldA9
-    // }
+    let oldA9 = localStorage.getItem("a9-" + newA9.id)
+    if (oldA9 && oldA9 != "undefined") {
+      oldA9 = JSON.parse(oldA9)
+      console.log("got local a9 for " + newA9.id, oldA9)
+      newA9 = oldA9
+    }
     setAnnotation(newA9)
   }
 
@@ -165,8 +144,8 @@ const Annotation = () => {
           speaker: 0,
         }
       });
-    //console.log("stored local a9 for " + newA9.id)
-    //    localStorage.setItem("a9-" + newA9.id, JSON.stringify(newA9))
+    console.log("stored local a9 for " + newA9.id)
+    localStorage.setItem("a9-" + newA9.id, JSON.stringify(newA9))
     setAnnotation(newA9)
     console.log("editSummary", getLastA9(newA9).annotationSummary.segments[index])
   }
@@ -214,6 +193,8 @@ const Annotation = () => {
     })()
   }
 
+  const [, updateState] = React.useState();
+  const forceUpdate = React.useCallback(() => updateState({}), []);
   if (!annotation) {
     return (
       <div style={{backgroundColor: c.background, width: "100%"}}>
@@ -235,14 +216,23 @@ const Annotation = () => {
   return (
     <div style={{backgroundColor: c.background, width: "100%"}}>
     <div style={{backgroundColor: c.foreground, margin: "3%", padding: "3%", borderRadius: 5, width: "94%"}}>
-       {getLastA9().annotationSource.segments.map((segment, index) => {
+      {getLastA9().annotationSource.segments.map((segment, index) => {
+        const onChangeSummary = (e) => {
+          const newValue = e.target.value.replace(/\n/g, '').replace("  ", " ")
+          editSummary(index, newValue)
+          forceUpdate()  // idk why I need this but I do
+        }
+        const summaryValue = getLastA9().annotationSummary.segments[index].segmentText
+        if (index == 0) {
+          console.log({summaryValue})
+        }
         return (
-          <div style={{fontSize: 16}}>
+          <div key={index} style={{fontSize: 16}}>
             <div style={{display: "flex"}}>
               <div style={{flex: 5, textAlign: "justify"}}>
                 <div style={{color: c.darkText}}>{`Segment ${index + 1}`}</div>
                 <br/>
-                <div key={index}>{segment.sentences.map((s, si) => {
+                <div>{segment.sentences.map((s, si) => {
                   let style
                   if (s.speaker == 1) style = {color: c.pinkText}
                   else if (s.speaker == 2) style = {color: c.greenText}
@@ -253,7 +243,7 @@ const Annotation = () => {
               <div style={{flex: 6}}>
                 <div style={{color: c.darkText}}>{`Segment Summary ${index + 1}`}</div>
                 <br/>
-                <SummaryInputView value={getLastA9().annotationSummary.segments[index].segmentText} addClearState={f => {clearStateFuncs.push(f)}} onChange={(v) => {editSummary(index, v)}}/>
+                <textarea spellCheck="true" style={{backgroundColor: c.input, color: c.lightText, fontSize: 14}} rows="10" cols="50" onChange={onChangeSummary} value={summaryValue}/>
                 <br/>
                 <br/>
                 <div style={{color: c.darkText}}>{`Other Sentences Used, Enter separated by a comma ','`}</div>
