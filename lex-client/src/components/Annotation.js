@@ -175,7 +175,7 @@ const Annotation = () => {
       annotationId: annotation.id,
       annotationSourceId: annotation.id,
       sourceSegmentCount: getLastA9().annotationSummary.segments.length,
-      idealCompression: 0.65,
+      idealCompression: 0.5,
       depth: getLastA9().depth + 1,
     }
     try {
