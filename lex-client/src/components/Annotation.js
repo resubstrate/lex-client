@@ -205,7 +205,7 @@ const Annotation = () => {
       </div>
     )
   }
-  if (getLastA9().annotationSource.segments.length <= 1) {
+  if (annotation.isComplete) {
     return (
       <div style={{backgroundColor: c.background, width: "100%"}}>
         <div style={{backgroundColor: c.foreground, margin: "3%", padding: "3%", borderRadius: 5, width: "94%"}}>
